@@ -21,6 +21,10 @@ import BG from "../../BG/BG";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Button } from "react-native-paper";
 import Icon from "react-native-vector-icons/Ionicons";
+import * as Localization from 'expo-localization';
+
+const locale = Localization.locale 
+const side = lovale === 'he-IL' ? "right" : "left";
 
 export default function NewRequestContact(props) {
   //true for my details radio and false for someone else radio
@@ -429,8 +433,8 @@ const styles = StyleSheet.create({
 
   textView: {
     width: "100%",
-    alignItems: "flex-start",
-    justifyContent: "flex-start",
+    alignItems: side === 'left' ? "flex-start" : "flex-end",
+    justifyContent: side === 'left' ? "flex-start" : "flex-end",
     marginLeft: "2%",
   },
 
