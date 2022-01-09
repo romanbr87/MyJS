@@ -7,6 +7,7 @@ import {
     TextInput,
     SafeAreaView,
     FlatList,
+    SectionList,
     ActivityIndicator,
     Modal,
     Button,
@@ -56,10 +57,10 @@ export default function ContactList(props) {
             return value.slice(0, 1).toUpperCase();
         }
 
-    let res, res1 = [{"title": '', data: []}];
+    let res;
     if (array.length==0 || array == undefined) res = [{"title": '', data: []}];
     else res = array.reduce(function (list, name, index) {
-        let newName = name
+        let newName = name;
         let listItem = list.find((item) => item.title.toUpperCase() && item.title.toUpperCase() === getFirstLetterFrom(newName.name));
         if (!listItem) {
             list.push({"title": getFirstLetterFrom(newName.name), "data": [newName]})
@@ -70,8 +71,7 @@ export default function ContactList(props) {
         return list;
     }, [])
         
-    console.log (res[20]);
-    return res1
+    return res
     }
     
     useEffect(() => {
@@ -105,26 +105,33 @@ export default function ContactList(props) {
     }
 
 
-    const Item = ({ title, style1, style2, style3 }) => (
-        <View style={style1}>
+    const Item = ({ item }) => {
+        try {
+        return (
+        <View style={styles.contactsRenderedView}>
             <TouchableOpacity
                 onPress={() => {
-                    props.pickedContectHandler(title)
+                    props.pickedContectHandler({ name: item.name, phone: item.phoneNumbers[0].number })
                     setSerchTermInput('')
                 }}>
-                <Text style={style2}>
-                    {title}
+                <Text style={styles.contactsRendered}>
+                    {item?.name}
                 </Text>
-                <Text style={style3}>
-                    {title}
+                <Text style={styles.contactsRendered2}>
+                    {item?.phoneNumbers[0].number}
                 </Text>
             </TouchableOpacity>
         </View>
-    );
+        )}
+       
+        catch (e) {
+            return <View/>;
+        }
+    }
 
-    const Titleitem = ({ title, style1, style2 }) => (
-        <View style={style1}>
-            <Text style={style2}>
+    const Titleitem = ({ title }) => (
+        <View style={styles.contactsTitleView}>
+            <Text style={styles.contactsTitle}>
                 {title}
             </Text>
         </View>
@@ -176,10 +183,10 @@ export default function ContactList(props) {
                             <ActivityIndicator size="large" color="#bad555" />
                         </View>
                     )}
-                    <FlatList
-                        data={searchContacts()}
-                        renderItem={renderItem}
-                        keyExtractor={(item, index) => index.toString()}
+                    <SectionList
+                        sections={getContactsDividedByLetters(searchContacts())}
+                        renderItem={({ item }) => <Item item={item} />}
+                        keyExtractor={(item, index) => item + index}
                         ListEmptyComponent={() => (
                             <View
                                 style={{
@@ -193,6 +200,7 @@ export default function ContactList(props) {
                                 <Text style={{ color: 'gray' }}>No Contacts Found</Text>
                             </View>
                         )}
+                        renderSectionHeader={({ section: { title } }) => <Titleitem title={title} /> }
                     />
                 </View>
                 <View>
