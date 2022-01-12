@@ -1,44 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
     StyleSheet,
     TouchableOpacity,
     Text,
+    Button,
     View,
     TextInput,
     SafeAreaView,
-    FlatList,
     SectionList,
     ActivityIndicator,
     Modal,
-    Button,
 } from 'react-native';
 import * as Contacts from 'expo-contacts';
-import Colors from '../../../Colors';
-
+import Colors from "../../../Colors";
+import transFile from "../../../TranslateFile";
+import { getTranslation } from 'react-native-translation/src/LanguageProvider';
+import * as Localization from 'expo-localization';
+import { DataStorage } from "../../../DataStorage";
 
 export default function ContactList(props) {
     //------hooks----------
     const [contacts, setContacts] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [serchTermInput, setSerchTermInput] = useState('');
-    const [DATA,setDATA] = useState([
-        {
-          title: "Main dishes",
-          data: ["Pizza", "Burger", "Risotto"]
-        },
-        {
-          title: "Sides",
-          data: ["French Fries", "Onion Rings", "Fried Shrimps"]
-        },
-        {
-          title: "Drinks",
-          data: ["Water", "Coke", "Beer"]
-        },
-        {
-          title: "Desserts",
-          data: ["Cheese Cake", "Ice Cream"]
-        }
-      ])
+    const [userData] = useContext(DataStorage);
+    const { deviceLanguage, getDirection } = userData;
+
     //------functions-------------------
     const loadContacts = async () => {
 
@@ -46,40 +33,19 @@ export default function ContactList(props) {
         if (status === 'granted') {
             const { data } = await Contacts.getContactsAsync();
             data.sort((a, b) => a.name.localeCompare(b.name));
+            console.log (data);
             setContacts(data);
             setIsLoading(false)
         }
 
     }
-    
-    const getContactsDividedByLetters = (array) => {
-        function getFirstLetterFrom(value) {
-            return value.slice(0, 1).toUpperCase();
-        }
 
-    let res;
-    if (array.length==0 || array == undefined) res = [{"title": '', data: []}];
-    else res = array.reduce(function (list, name, index) {
-        let newName = name;
-        let listItem = list.find((item) => item.title.toUpperCase() && item.title.toUpperCase() === getFirstLetterFrom(newName.name));
-        if (!listItem) {
-            list.push({"title": getFirstLetterFrom(newName.name), "data": [newName]})
-        } else {
-            listItem.data.push(newName)
-        }
-    
-        return list;
-    }, [])
-        
-    return res
-    }
-    
     useEffect(() => {
         setIsLoading(true);
         loadContacts();
     }, [])
 
-    //how items appear in the flatlist
+    //how items appear in the sectionlist
     const renderItem = ({ item }) => {
         if (item.phoneNumbers && item.name) {
             return (
@@ -90,46 +56,22 @@ export default function ContactList(props) {
                             setSerchTermInput('')
                         }}
                     >
-                        <Text style={styles.contactsRendered}>
-                            {item.name}
-                        </Text>
-                        <Text style={styles.contactsRendered}>
-                            {item.phoneNumbers[0].number}
-                        </Text>
+                        <View style={styles.contactsRendered}>
+                            <Text style={{fontWeight: 'bold', }}>{item?.firstName}</Text>
+                            <Text style={{marginHorizontal: item?.firstName ? 10 : 0, }}>{item?.lastName}</Text>
+                        </View>
                     </TouchableOpacity>
                 </View>
 
             )
         }
 
+        else return <View />
+
     }
-
-
-    const Item = ({ item }) => {
-        try {
-        return (
-        <View style={styles.contactsRenderedView}>
-            <TouchableOpacity
-                onPress={() => {
-                    props.pickedContectHandler({ name: item.name, phone: item.phoneNumbers[0].number })
-                    setSerchTermInput('')
-                }}>
-                <Text style={styles.contactsRendered}>
-                    {item?.name}
-                </Text>
-                <Text style={styles.contactsRendered2}>
-                    {item?.phoneNumbers[0].number}
-                </Text>
-            </TouchableOpacity>
-        </View>
-        )}
-       
-        catch (e) {
-            return <View/>;
-        }
-    }
-
-    const Titleitem = ({ title }) => (
+  
+    //how titles appear in the sectionlist
+    const renderSectionHeader = ({ section: { title } }) => (
         <View style={styles.contactsTitleView}>
             <Text style={styles.contactsTitle}>
                 {title}
@@ -144,13 +86,36 @@ export default function ContactList(props) {
             let filteredContacts = contacts.filter(contact => {
                 let Lowercasecontact = contact.name.toLowerCase();
                 let searchLowercase = serchTermInput.toLowerCase();
-                return Lowercasecontact.indexOf(searchLowercase) > -1;
+                return Lowercasecontact.includes(searchLowercase);
             })
             return filteredContacts
 
         }
         return contacts
     };
+
+    //Returns data object for sectionlist
+    const getContactsDividedByLetters = (array) => {
+        function getFirstLetterFrom(value) {
+            return value.slice(0, 1).toUpperCase();
+        }
+
+        let res;
+        if (array.length==0 || !array) res = [{"title": '', data: []}];
+        else res = array.reduce(function (list, name) {
+            let newName = name;
+            let listItem = list.find((item) => item.title.toUpperCase() && item.title.toUpperCase() === getFirstLetterFrom(newName.name));
+            if (!listItem) {
+                list.push({"title": getFirstLetterFrom(newName.name), "data": [newName]})
+            } else {
+                listItem.data.push(newName)
+            }
+        
+            return list;
+        }, [])
+            
+        return res
+    }
 
     const handleCencleBtn = () => {
         setSerchTermInput('')
@@ -163,11 +128,10 @@ export default function ContactList(props) {
         <Modal visible={props.contactViewMod} animationType="slide" style={styles.container} >
             <View style={{ flex: 1 }}>
                 <SafeAreaView />
-                <View style={{ backgroundColor: "grey" }}>
+                <View style={{ backgroundColor: Colors.colorCloud }}>
                     <TextInput
-                        placeholder="Search"
-                        placeholderTextColor="rgb(116,116,116)"
-                        style={styles.inputSerch}
+                        placeholder={getTranslation(transFile.name)+ '...'}
+                        style={{...styles.inputSerch, textAlign: getDirection(deviceLanguage).align}}
                         onChangeText={(value) => { setSerchTermInput(value) }}
                     />
                 </View>
@@ -180,31 +144,24 @@ export default function ContactList(props) {
                                 justifyContent: 'center'
                             }}
                         >
-                            <ActivityIndicator size="large" color="#bad555" />
+                            <ActivityIndicator size="large" color={Colors.colorSeafoamBlue} />
                         </View>
                     )}
                     <SectionList
                         sections={getContactsDividedByLetters(searchContacts())}
-                        renderItem={({ item }) => <Item item={item} />}
+                        renderItem={renderItem}
                         keyExtractor={(item, index) => item + index}
                         ListEmptyComponent={() => (
-                            <View
-                                style={{
-                                    flex: 1,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginTop: 50,
-
-                                }}
-                            >
-                                <Text style={{ color: 'gray' }}>No Contacts Found</Text>
+                            <View style={emptyContactsList}>
+                                <Text style={{ color: Colors.colorCloud }}>No Contacts Found</Text>
                             </View>
                         )}
-                        renderSectionHeader={({ section: { title } }) => <Titleitem title={title} /> }
-                    />
+                        renderSectionHeader={renderSectionHeader}
+                        refreshing={true}
+                     />
                 </View>
                 <View>
-                    <Button title={"cancle"} onPress={handleCencleBtn} style={styles.cancelButton} />
+                    <Button title={getTranslation(transFile.cancel_uppercase)} onPress={handleCencleBtn} style={styles.cancelButton} />
                 </View>
             </View>
 
@@ -235,16 +192,24 @@ const styles = StyleSheet.create({
         height: 50,
         fontSize: 20,
         padding: 10,
-        color: '#7d90a0',
+        color: Colors.colorBlack,
         borderWidth: 1,
-        borderColor: '#7d90a0',
+        borderColor: Colors.colorCloud,
         backgroundColor: Colors.colorWhite,
+        borderRadius: 10,
+    },
+
+    emptyContactsList: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 50,
     },
 
     cancelButton: {
         justifyContent: "center",
         margin: 20,
-        width: "80%",
+        width: "100%",
         alignItems: "center",
     },
 
@@ -254,50 +219,43 @@ const styles = StyleSheet.create({
     },
 
     serchBtn: {
-        width: "20%"
+        width: "100%"
     },
 
     contactsTitle: {
         paddingTop: 10,
-        paddingBottom: 10,
+        paddingBottom: 5,
         paddingHorizontal: 5,
         marginTop: -5,
         marginHorizontal: 20,
-        color: 'black',
+        color: Colors.colorBlack,
         fontWeight: 'bold',
-        fontSize: 20,
+        fontSize: 18,
         flex: 1,
         flexDirection: "row"
     },
 
     contactsTitleView: {
         minHeight: 30,
-        backgroundColor: "#dcdcdc",
+        backgroundColor: Colors.colorCloud,
     },
 
     contactsRendered: {
-        padding: 5,
+        paddingHorizontal: 5,
+        paddingVertical: 15,
         marginHorizontal: 20,
-        color: 'black',
+        color: Colors.colorBlack,
         fontSize: 16,
         flex: 1,
         flexDirection: "row",
+        alignItems: "center",
     },
 
-    contactsRendered2: {
-        padding: 5,
-        marginHorizontal: 20,
-        color: 'black',
-        fontSize: 16,
-        flex: 1,
-        flexDirection: "row",
-        borderBottomColor: Colors.colordarkCoral,
-        borderBottomWidth: 0.5,
-    },
 
     contactsRenderedView: {
-        marginTop: -5,
-        minHeight: 70,
-        backgroundColor: "#f5f5dc",
+        minHeight: 35,
+        backgroundColor: Colors.colorWhite,
+        borderBottomColor: Colors.colorCloud,
+        borderBottomWidth: 1,
     },
 });
