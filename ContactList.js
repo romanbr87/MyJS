@@ -57,8 +57,8 @@ export default function ContactList(props) {
                         }}
                     >
                         <View style={styles.contactsRendered}>
-                            <Text style={{fontWeight: 'bold', }}>{item?.firstName}</Text>
-                            <Text style={{marginHorizontal: item?.firstName ? 10 : 0, }}>{item?.lastName}</Text>
+                            <Text style={{fontWeight: 'bold'}}>{item?.firstName}</Text>
+                            <Text style={{marginHorizontal: item?.firstName ? 10 : 0, flexShrink: 2}}>{item?.lastName}</Text>
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -102,7 +102,7 @@ export default function ContactList(props) {
 
         let res;
         if (array.length==0 || !array) res = [{"title": '', data: []}];
-        else res = array.reduce(function (list, name) {
+        else res = array.reduce(function (list, name, index) {
             let newName = name;
             let listItem = list.find((item) => item.title.toUpperCase() && item.title.toUpperCase() === getFirstLetterFrom(newName.name));
             if (!listItem) {
@@ -242,13 +242,12 @@ const styles = StyleSheet.create({
 
     contactsRendered: {
         paddingHorizontal: 5,
-        paddingVertical: 15,
+        paddingVertical: 10,
         marginHorizontal: 20,
         color: Colors.colorBlack,
         fontSize: 16,
         flex: 1,
         flexDirection: "row",
-        alignItems: "center",
     },
 
 
