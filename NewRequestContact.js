@@ -63,7 +63,6 @@ const NewRequestContact = observer((props) => {
           borderColor: isUsername ? Colors.colorBlack : Colors.red }}
           textAlign={direction.align}
           keyboardType="default"
-          editable={!value}
         ></TextInput>
 
         {/* inputs small titles */}
@@ -131,6 +130,7 @@ const NewRequestContact = observer((props) => {
   const sendRequetToServer = () => {
     NewRequestStore.sendPostToServer(postId).then((res) => {     
       if (res.code === 200) {
+        setisVisible (true);
         updateUserMessage(TranslateFile.newRequest_successMessage);
         navigation.navigate(ScreenNames.homePageMain)
       }
@@ -147,11 +147,16 @@ const NewRequestContact = observer((props) => {
   const nextBtnAction = () => {
       if (value === radio_props[1].key) 
       { 
-        if (isPhoneNumber && isUsername) {
-          setisVisible (true);
-        }
+         let isName = userName.length >= 2;
+         let isValidPhoneNum = phoneNumberValidator(phone);
+         setIsUername (isName) 
+         setIsPhoneNumber (isValidPhoneNum) 
+         if (isName && isValidPhoneNum) sendRequetToServer ();
       }
-      else sendRequetToServer ();
+      else {
+        if (userName.length !== 1) sendRequetToServer ();
+        else setIsUername (false);
+      }
   }    
 
   const showTheContactsView = () => {
@@ -180,11 +185,11 @@ const NewRequestContact = observer((props) => {
     setShowContactsView(!showContactsView);
   };
   const handleNameInput = (text) => {
-    setIsUername (text?.length > 0);    
+    //setIsUername (text?.length > 0);    
     setUserName(text);
   }
   const handlePhoneInput = (text) => {
-    setIsPhoneNumber (phoneNumberValidator (text))
+    //setIsPhoneNumber (phoneNumberValidator (text))
     setPhone(text);
   }
 
@@ -202,18 +207,17 @@ const NewRequestContact = observer((props) => {
   
   
   const sendToWhatsappMessageParams = {
-    title: transFile.requestDetails_whatsApp,
     text: getTranslation(transFile.whatsAppQuestion),
     noBtn:{
       onPress: () => {
         setisVisible(false);
-        sendRequetToServer();
       },
       text: transFile.cancel_uppercase,
     },
     yesBtn:{
       onPress: () =>{ 
         setisVisible(false);
+        //transFile.postedForOtherMessage
       },
       text: transFile.send,
     },
@@ -237,6 +241,8 @@ const NewRequestContact = observer((props) => {
               onPress={() => {
                 setValue(radio_props[0].key);
                 userNameHandler(true);
+                setIsUername (true) 
+                setIsPhoneNumber (true)        
                 showTheContactsViewButton(false);
               }}
             >
@@ -263,6 +269,8 @@ const NewRequestContact = observer((props) => {
             <TouchableOpacity
               style={styles.radioCircle}
               onPress={() => {
+                setIsUername (true) 
+                setIsPhoneNumber (true)        
                 showTheContactsViewButton(true);
                 setValue(radio_props[1].key);
                 userNameHandler(false);
@@ -285,13 +293,11 @@ const NewRequestContact = observer((props) => {
       </View>
       <View>
         {/* page for picking other contact */}
-        {showContactsViewButton && (
-          <TouchableOpacity
-            onPress={showTheContactsView}
-            style={styles.btnContacts}
-          >
-            <View
-              style={{ flexDirection: direction.flexDirection, alignItems: 'center' }}
+        {showContactsViewButton && 
+          <View>
+            <TouchableOpacity
+              onPress={showTheContactsView}
+              style={{...styles.btnContacts, flexDirection: direction.flexDirection, }}
             >
               <ContactsIcon />
               <Text
@@ -309,9 +315,9 @@ const NewRequestContact = observer((props) => {
                   }}
                 />
               </Text>
-            </View>
-          </TouchableOpacity>
-        )}
+            </TouchableOpacity>
+          </View>
+        }
 
         {showContactsView && (
           <ContactList
@@ -329,7 +335,8 @@ const NewRequestContact = observer((props) => {
         )}
       </View>
       {
-        !value && <PopupWindow {...sendToWhatsappMessageParams} />
+        (value == radio_props[1].key) && 
+        <PopupWindow {...sendToWhatsappMessageParams} />
       }
     </BG>
   );
@@ -425,7 +432,7 @@ const styles = StyleSheet.create({
   },
   inputsTitlesSmall: {
     color: "rgb(180, 179, 191)",
-    marginTop: 10,
+    marginTop: 5,
   },
 
   radioTitles: {
@@ -441,8 +448,9 @@ const styles = StyleSheet.create({
   },
 
   btnContacts: {
+    alignItems: 'center',
     fontSize: 18,
-    height: 50,
+    height: 25,
     marginHorizontal: 10,
   },
 });
