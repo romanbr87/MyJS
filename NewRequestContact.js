@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   TouchableOpacity,
   StyleSheet,
@@ -6,23 +6,22 @@ import {
   View,
   TextInput,
   ActivityIndicator,
+  Linking,
 } from "react-native";
-import { TransText, getTranslation } from "react-native-translation";
-import transFile from "../../translate/TranslateFile";
+import AppContext from "../../store/AppContext";
+import { TransText, getTranslation, getLanguage } from "react-native-translation";
 import ContactList from "./Details/ContactList";
 import { mainBtn } from "../../utils/StylesComponent";
 import Colors from "../../utils/Colors";
 import BG from "../BG/BG";
 import ContactsIcon from "../../../assets/svg/categories/ContactsIcon";
-import AppContext from "../../store/AppContext";
 import BackBtn from "../backBtn/BackBtn";
 import { observer } from "mobx-react";
 import TextComp from "../text/TextComp";
-import PopupWindow from "../modal/PopupWindow";
 import ScreenNames from "../../screens/ScreenNames";
-import TranslateFile from "../../translate/TranslateFile";
+import transFile from "../../translate/TranslateFile";
 
-const NewRequestContact = observer((props) => {
+const NewRequestContact = (props) => {
   const { postId, NewRequestStore, updateUserMessage } = props
   const postData = NewRequestStore.postData
   //true for my details radio and false for someone else radio
@@ -34,18 +33,25 @@ const NewRequestContact = observer((props) => {
   const [showContactsViewButton, setShowContactsViewButton] = useState(false);
   const [isPhoneNumber, setIsPhoneNumber] = useState (true);
   const [isUsername, setIsUername] = useState (true);
+  const {setisVisible, setModal} = props
   const navigation = props.navigation;
-  const [isVisible, setisVisible] = useState(false);
-  const { user } = useContext(AppContext);
-  const { getDirection, deviceLanguage } = user;
+  const { getDirection, deviceLanguage } = useContext(AppContext).user;
   const direction = getDirection (deviceLanguage);
   
   //{"align": "right", "alignSelf": "flex-end", "flexDirection": "row-reverse"}
+  console.log ("Tran's Language: ", getLanguage())
+  console.log ("Willing's Language: ", deviceLanguage);
+  useEffect (() => {
+    console.log ("Tran's Language: ", getLanguage())
+    console.log ("Willing's Language: ", deviceLanguage);
+    alert (getTranslation(transFile.aboutDescription, deviceLanguage));
+  }, [])
 
   const renderContent = () => {
     return (
-      <View style={{...styles.detailsBox}}>
-        <View style={{...styles.textInputTitleView, flexDirection: direction.flexDirection}}>
+      <View style={{...styles.detailsBox, marginTop: 7}}>
+        <View style={{...styles.textInputTitleView, 
+          flexDirection: direction.flexDirection}}>
           <TransText
             style={styles.inputsTitlesSmall}
             dictionary={transFile.name}
@@ -60,7 +66,7 @@ const NewRequestContact = observer((props) => {
           value={userName}
           onChangeText={(text) => handleNameInput(text)}
           style={{...styles.secondInput,
-          borderColor: isUsername ? Colors.colorBlack : Colors.red }}
+          borderColor: isUsername ? Colors.CoolGrey : Colors.red }}
           textAlign={direction.align}
           keyboardType="default"
         ></TextInput>
@@ -80,7 +86,7 @@ const NewRequestContact = observer((props) => {
           value={phone}
           onChangeText={(text) => handlePhoneInput(text)}
           style={{...styles.secondInput,
-          borderColor: isPhoneNumber ? Colors.colorBlack : Colors.red }}
+          borderColor: isPhoneNumber ? Colors.CoolGrey : Colors.red }}
           textAlign={direction.align}
           keyboardType="number-pad"
           editable={!value}
@@ -127,15 +133,20 @@ const NewRequestContact = observer((props) => {
     return validation!==null;
   }
 
-  const sendRequetToServer = () => {
+  const sendRequetToServer = async () => {
     NewRequestStore.sendPostToServer(postId).then((res) => {     
       if (res.code === 200) {
-        setisVisible (true);
-        updateUserMessage(TranslateFile.newRequest_successMessage);
-        navigation.navigate(ScreenNames.homePageMain)
+        //console.log ("res: ");
+        //console.log (res);
+        updateUserMessage(transFile.newRequest_successMessage);
+        if (value === radio_props[1].key) {  
+          setisVisible (true)
+          setModal (sendToWhatsappMessageParams(res.requestId));
+        }
+        navigation.navigate(ScreenNames.homePageMain) 
       }
       else {
-        updateUserMessage(TranslateFile.serverConnectionErrorMessage);
+        updateUserMessage(transFile.serverConnectionErrorMessage);
         navigation.navigate(ScreenNames.homePageMain)
       }
     }).catch(e => {
@@ -154,7 +165,7 @@ const NewRequestContact = observer((props) => {
          if (isName && isValidPhoneNum) sendRequetToServer ();
       }
       else {
-        if (userName.length !== 1) sendRequetToServer ();
+        if (userName?.length !== 1) sendRequetToServer ();
         else setIsUername (false);
       }
   }    
@@ -206,22 +217,40 @@ const NewRequestContact = observer((props) => {
   }, [navigation]);
   
   
-  const sendToWhatsappMessageParams = {
-    text: getTranslation(transFile.whatsAppQuestion),
-    noBtn:{
-      onPress: () => {
-        setisVisible(false);
+  const sendToWhatsappMessageParams = (id) => {
+    return {
+      text: getTranslation(transFile.whatsAppQuestion),
+      noBtn:{
+        onPress: () => {
+          props.setisVisible(false);
+        },
+        text: transFile.no,
       },
-      text: transFile.cancel_uppercase,
-    },
-    yesBtn:{
-      onPress: () =>{ 
-        setisVisible(false);
-        //transFile.postedForOtherMessage
+      yesBtn:{
+        onPress: () =>{ 
+          props.setisVisible(false);
+          let whatsappMsg = getTranslation(transFile.postedForOtherMessage);
+          whatsappMsg = whatsappMsg.replace('[fullDesc]', '[' + postData.content + ']');
+          whatsappMsg = whatsappMsg.replace('[requestURL]', 'http://www.willingapp.com/requests/' + id);
+
+          let url =
+          'whatsapp://send?text=' + 
+          whatsappMsg +
+          '&phone=972' + phone.substring(1);
+    
+          alert (url);
+
+          Linking.openURL(url)
+          .then((data) => {
+            console.log('WhatsApp Opened');
+          })
+          .catch(() => {
+            console.log('Make sure Whatsapp installed on your device');
+          });
+        },
+        text: transFile.yes,
       },
-      text: transFile.send,
-    },
-    isVisible: isVisible
+    }
   }
 
   //-------------------------------------------------------------------------
@@ -267,7 +296,7 @@ const NewRequestContact = observer((props) => {
             <Text style={styles.radioText}>{radio_props[1].label}</Text>
 
             <TouchableOpacity
-              style={styles.radioCircle}
+              style={{...styles.radioCircle }}
               onPress={() => {
                 setIsUername (true) 
                 setIsPhoneNumber (true)        
@@ -334,13 +363,9 @@ const NewRequestContact = observer((props) => {
           mainBtn(nextBtnAction, transFile.next_uppercase)
         )}
       </View>
-      {
-        (value == radio_props[1].key) && 
-        <PopupWindow {...sendToWhatsappMessageParams} />
-      }
     </BG>
   );
-})
+}
 
 //-------------styles-------------------------------------
 const styles = StyleSheet.create({
@@ -441,9 +466,11 @@ const styles = StyleSheet.create({
   },
 
   textInputTitleView: {
-    alignItems: "center",
-    height: 29,
+    alignItems: "flex-start",
     width: "100%",
+    height: 20,
+    paddingBottom: -10,
+    marginBottom: -5,
     justifyContent: "space-between",
   },
 
