@@ -4,6 +4,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  TextInput,
 } from "react-native";
 import { TransText, getTranslation } from "react-native-translation";
 import TranslateFile from "../../translate/TranslateFile";
@@ -42,7 +43,9 @@ export default function FilterPage({ navigation }) {
   const [isLoading, setIsLoading] = useState(false)
   const locale = user.deviceLanguage
   const { deviceLanguage, getDirection } = user
-
+  const lanDirection = getDirection (deviceLanguage).align; 
+  const plusButtonStyle = lanDirection ==='left' ? {right: 10} : {left: 10};
+ 
   // clear all btn
   function clearAll() {
     let initState = {
@@ -159,10 +162,11 @@ export default function FilterPage({ navigation }) {
       returnKeyType:"next",
       onSubmitEditing: () => onSearchWordPress(),
       placeholder: locale == "he-IL" ? "הכנס מילים" : "Enter Here",
-      style: styles.keyWordInput,
       onChangeText: (val) => {
         setSearchContent(val);
-      }
+      },
+      style: [styles.keywordInput,
+      lanDirection==='left'?{marginRight: 20}:{marginLeft: 20}]
     },
     tagPress: (tag,ind)=>({
       key: ind,
@@ -198,12 +202,13 @@ export default function FilterPage({ navigation }) {
       {/* search by word */}
       <View style={styles.keyWord}>
         <TextComp {...params.keywordHeader} />
+        {/* view for inputBox with + button */}
         <View style={styles.keywordInputView}>
-        <InputBox {...params.keywordInput} />
-        <TouchableOpacity style={styles.keywordInputPlusButton}
-        onPress={onSearchWordPress}>
-        <Text style={styles.plusButtonText}>+</Text>
-        </TouchableOpacity>
+          <InputBox {...params.keywordInput} />
+          <TouchableOpacity style={[styles.keywordInputPlusButton, plusButtonStyle]}
+          onPress={onSearchWordPress}>
+            <Text style={styles.plusButtonText}>+</Text>
+          </TouchableOpacity>
         </View>
         <View style={[styles.tagPressBox,{flexDirection:getDirection(deviceLanguage).flexDirection}]}>
           {searchByWord &&
@@ -244,7 +249,6 @@ const styles = StyleSheet.create({
     height: 48,
     fontSize: 16,
     backgroundColor: colors.White,
-    
   },
   categoryRow: {
     flexDirection: "row",
@@ -279,26 +283,23 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   keywordInputView: {
-    justifyContent: 'center',
     borderWidth: 1,
-    padding: 15,
     borderRadius: 7,
+    paddingHorizontal: 10,
     borderColor: colors.CoolGrey,
     height: 48,
     backgroundColor: colors.White,
-
+    justifyContent: 'center',
   },
-  keyWordInput: {
+  keywordInput: {
     fontSize: 16,
+    color: colors.SlateGrey,
   },
   keywordInputPlusButton: {
     position: 'absolute',
-    justifyContent: 'center',
-    right: 10,
-    marginHorizontal: 10,
   },
   plusButtonText: {
     color: colors.CoolGrey,
-    fontSize: 25,
+    fontSize: 30,
   }
 });
