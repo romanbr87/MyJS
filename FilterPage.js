@@ -36,7 +36,6 @@ export default function FilterPage({ navigation }) {
   }
   const [categoryBox, setCategoryBox] = useState(initCategoryState);
   const [cityData, setCityData] = useState(initCityState);
-  const chooseCityPlaceholder = getTranslation(TranslateFile.filter_pickCity);
   const initValue = filterOptions.searchContent ? filterOptions.searchContent.split(',') : []
   const [searchContent, setSearchContent] = useState('');
   const [searchByWord, setSearchByWord] = useState(initValue);
@@ -44,7 +43,7 @@ export default function FilterPage({ navigation }) {
   const locale = user.deviceLanguage
   const { deviceLanguage, getDirection } = user
   const lanDirection = getDirection (deviceLanguage).align; 
-  const plusButtonStyle = lanDirection ==='left' ? {right: 10} : {left: 10};
+  const plusButtonStyle = lanDirection ==='left' ? {right: 10, marginRight: 5} : {left: 10, marginLeft: 5};
  
   // clear all btn
   function clearAll() {
@@ -161,12 +160,11 @@ export default function FilterPage({ navigation }) {
       keyboardType:"default",
       returnKeyType:"next",
       onSubmitEditing: () => onSearchWordPress(),
-      placeholder: locale == "he-IL" ? "הכנס מילים" : "Enter Here",
       onChangeText: (val) => {
         setSearchContent(val);
       },
       style: [styles.keywordInput,
-      lanDirection==='left'?{marginRight: 20}:{marginLeft: 20}]
+      lanDirection==='left'? {marginRight: 20} : {marginLeft: 20}]
     },
     tagPress: (tag,ind)=>({
       key: ind,
@@ -175,10 +173,9 @@ export default function FilterPage({ navigation }) {
       name: tag,
     }),
     autoComplete:{
-      style:{ marginTop: 30 },
+      style: styles.cityInput,
       title:TranslateFile.filter_pickCity,
       initValue:cityData.cityText,
-      placeholder:chooseCityPlaceholder,
       onPress:(valId, valAddress) => {
         onAutoCompleteResultPress(valId, valAddress);
       }
@@ -194,11 +191,6 @@ export default function FilterPage({ navigation }) {
 
   return (
     <BG style={styles.container}>
-      {/* choose category */}
-      <View style={styles.categoryBox}>
-        <TextComp {...params.categoryHeader} />
-        <View style={{ width: "100%" }}>{categoryIconShow()}</View>
-      </View>
       {/* search by word */}
       <View style={styles.keyWord}>
         <TextComp {...params.keywordHeader} />
@@ -219,6 +211,11 @@ export default function FilterPage({ navigation }) {
       </View>
       {/* search by city */}
       <AutoCompleteBox {...params.autoComplete} />
+      {/* choose category */}
+      <View style={styles.categoryBox}>
+        <TextComp {...params.categoryHeader} />
+        <View style={{flex: 1, }}>{categoryIconShow()}</View>
+      </View>
       {/* btn */}
       <View style={styles.apllyBtn}>
         {!isLoading ? mainBtn(handleApply, TranslateFile.next_uppercase) : <Loader />}
@@ -236,19 +233,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   header: {
-    marginBottom: 10,
+    marginBottom: 5,
     fontWeight: "bold",
-    fontSize: 18,
+    fontSize: 20,
     color: colors.SlateGrey
   },
   cityInput: {
-    borderWidth: 1,
-    padding: 15,
-    borderRadius: 7,
-    borderColor: colors.CoolGrey,
-    height: 48,
-    fontSize: 16,
-    backgroundColor: colors.White,
+    marginTop: 20, 
+    zIndex:99999,  
   },
   categoryRow: {
     flexDirection: "row",
@@ -256,10 +248,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   categoryBox: {
-    marginTop: 10
-  },
-  keyWord: {
-    marginTop: 20
+    marginTop: 20,
   },
   apllyBtn: {
     alignItems: "center",
@@ -274,32 +263,51 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     justifyContent: "center",
     alignItems: "center",
-    margin: 5,
-    paddingHorizontal: 8,
   },
   tagPressBox: {
-    marginTop:5,
+    marginTop: 5,
     width: "100%",
     flexWrap: "wrap",
+  },
+  keyWord: {
+    marginTop: 10
   },
   keywordInputView: {
     borderWidth: 1,
     borderRadius: 7,
     paddingHorizontal: 10,
+    paddingLeft: 12,
     borderColor: colors.CoolGrey,
     height: 48,
     backgroundColor: colors.White,
     justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    flex: 1,
   },
   keywordInput: {
     fontSize: 16,
+    height: 48,
+    borderColor: 'green',
+    borderWidth: 1,
     color: colors.SlateGrey,
   },
   keywordInputPlusButton: {
     position: 'absolute',
+    justifyContent: 'center',
+    flex: 1,
+    height: 48,
+    borderColor: 'green',
+    borderWidth: 1,
   },
   plusButtonText: {
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    textAlignVertical: 'center',
+    alignContent: 'center',
+    
     color: colors.CoolGrey,
-    fontSize: 30,
+    fontSize: 28,
   }
 });
